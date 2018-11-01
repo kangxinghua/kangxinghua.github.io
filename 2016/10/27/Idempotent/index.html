@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head><meta name="generator" content="Hexo 3.8.0">
+
+    <!--[if lt IE 9]>
+        <style>body {display: none; background: none !important} </style>
+        <meta http-equiv="Refresh" Content="0; url=//outdatedbrowser.com/" />
+    <![endif]-->
+
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge, chrome=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="format-detection" content="telephone=no">
+<meta name="author" content="康兴华">
+
+
+
+<meta name="description" content="前言现在稍微有点规模的网站和大型应用都不再是单机模式，而是分布式应用，基于多机器的集群构建的应用，这服务能力就可以基本实现横向扩展（scale out），不会像单机模式下的纵向扩容（scale up)会受到单机服务能力的上限限制。另外随着”微服务“概念的火爆，很多应用在构建之处就已经走上了分布式的道路。所有就目前行业的发展来，基于分布式应用会越来越普遍，甚至变为常态。加上”docker“的这些容器">
+<meta name="keywords" content="笔记">
+<meta property="og:type" content="article">
+<meta property="og:title" content="幂等性">
+<meta property="og:url" content="http://kxh.ink/2016/10/27/Idempotent/index.html">
+<meta property="og:site_name" content="康兴华">
+<meta property="og:description" content="前言现在稍微有点规模的网站和大型应用都不再是单机模式，而是分布式应用，基于多机器的集群构建的应用，这服务能力就可以基本实现横向扩展（scale out），不会像单机模式下的纵向扩容（scale up)会受到单机服务能力的上限限制。另外随着”微服务“概念的火爆，很多应用在构建之处就已经走上了分布式的道路。所有就目前行业的发展来，基于分布式应用会越来越普遍，甚至变为常态。加上”docker“的这些容器">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:updated_time" content="2018-10-22T06:34:56.118Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="幂等性">
+<meta name="twitter:description" content="前言现在稍微有点规模的网站和大型应用都不再是单机模式，而是分布式应用，基于多机器的集群构建的应用，这服务能力就可以基本实现横向扩展（scale out），不会像单机模式下的纵向扩容（scale up)会受到单机服务能力的上限限制。另外随着”微服务“概念的火爆，很多应用在构建之处就已经走上了分布式的道路。所有就目前行业的发展来，基于分布式应用会越来越普遍，甚至变为常态。加上”docker“的这些容器">
+
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+
+
+    <link rel="alternate" href="/atom.xml" title="康兴华" type="application/atom+xml">
+
+
+
+    <link rel="shortcut icon" href="/favicon.png">
+
+
+
+    <link href="//cdn.bootcss.com/animate.css/3.5.1/animate.min.css" rel="stylesheet">
+
+
+
+    <link href="//cdn.bootcss.com/fancybox/2.1.5/jquery.fancybox.min.css" rel="stylesheet">
+
+
+
+    <script src="//cdn.bootcss.com/pace/1.0.2/pace.min.js"></script>
+    <link href="//cdn.bootcss.com/pace/1.0.2/themes/blue/pace-theme-minimal.css" rel="stylesheet">
+
+
+<link rel="stylesheet" href="/css/style.css">
+
+
+
+<link href="//cdn.bootcss.com/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet">
+
+
+<title>幂等性 | 康兴华</title>
+
+<script src="//cdn.bootcss.com/jquery/2.2.4/jquery.min.js"></script>
+<script src="//cdn.bootcss.com/clipboard.js/1.5.10/clipboard.min.js"></script>
+
+<script>
+    var yiliaConfig = {
+        fancybox: true,
+        animate: true,
+        isHome: false,
+        isPost: true,
+        isArchive: false,
+        isTag: false,
+        isCategory: false,
+        fancybox_js: "//cdn.bootcss.com/fancybox/2.1.5/jquery.fancybox.min.js",
+        scrollreveal: "//cdn.bootcss.com/scrollReveal.js/3.1.4/scrollreveal.min.js",
+        search: true
+    }
+</script>
+
+
+    <script> yiliaConfig.jquery_ui = [false]; </script>
+
+
+
+    <script> yiliaConfig.rootUrl = "\/";</script>
+
+
+
+
+
+
+</head></html>
+<body>
+  <div id="container">
+    <div class="left-col">
+    <div class="overlay"></div>
+<div class="intrude-less">
+    <header id="header" class="inner">
+        <a href="/" class="profilepic">
+            <img src="/img/avatar.png" class="animated zoomIn">
+        </a>
+        <hgroup>
+          <h1 class="header-author"><a href="/">康兴华</a></h1>
+        </hgroup>
+
+        
+
+        
+            <form id="search-form">
+            <input type="text" id="local-search-input" name="q" placeholder="search..." class="search form-control" autocomplete="off" autocorrect="off" searchonload="true">
+            <i class="fa fa-times" onclick="resetSearch()"></i>
+            </form>
+            <div id="local-search-result"></div>
+            <p class="no-result">No results found <i class="fa fa-spinner fa-pulse"></i></p>
+        
+
+
+        
+            <div id="switch-btn" class="switch-btn">
+                <div class="icon">
+                    <div class="icon-ctn">
+                        <div class="icon-wrap icon-house" data-idx="0">
+                            <div class="birdhouse"></div>
+                            <div class="birdhouse_holes"></div>
+                        </div>
+                        <div class="icon-wrap icon-ribbon hide" data-idx="1">
+                            <div class="ribbon"></div>
+                        </div>
+                        
+                        <div class="icon-wrap icon-link hide" data-idx="2">
+                            <div class="loopback_l"></div>
+                            <div class="loopback_r"></div>
+                        </div>
+                        
+                        
+                        <div class="icon-wrap icon-me hide" data-idx="3">
+                            <div class="user"></div>
+                            <div class="shoulder"></div>
+                        </div>
+                        
+                    </div>
+                    
+                </div>
+                <div class="tips-box hide">
+                    <div class="tips-arrow"></div>
+                    <ul class="tips-inner">
+                        <li>菜单</li>
+                        <li>标签</li>
+                        
+                        <li>友情链接</li>
+                        
+                        
+                        <li>关于我</li>
+                        
+                    </ul>
+                </div>
+            </div>
+        
+
+        <div id="switch-area" class="switch-area">
+            <div class="switch-wrap">
+                <section class="switch-part switch-part1">
+                    <nav class="header-menu">
+                        <ul>
+                        
+                            <li><a href="/">主页</a></li>
+                        
+                            <li><a href="/archives/">所有文章</a></li>
+                        
+                            <li><a href="/tags/">标签云</a></li>
+                        
+                            <li><a href="/about/">关于我</a></li>
+                        
+                        </ul>
+                    </nav>
+                    <nav class="header-nav">
+                        <ul class="social">
+                            
+                                <a class="fa Email" href="mailto:kangxinghua@gmail.com" title="Email"></a>
+                            
+                                <a class="fa GitHub" href="https://github.com/kangxinghua" title="GitHub"></a>
+                            
+                                <a class="fa RSS" href="/atom.xml" title="RSS"></a>
+                            
+                        </ul>
+                    </nav>
+                </section>
+                
+                
+                <section class="switch-part switch-part2">
+                    <div class="widget tagcloud" id="js-tagcloud">
+                        <ul class="tag-list"><li class="tag-list-item"><a class="tag-list-link" href="/tags/Java-并发编程实战/">Java 并发编程实战</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/笔记/">笔记</a></li></ul>
+                    </div>
+                </section>
+                
+                
+                
+                <section class="switch-part switch-part3">
+                    <div id="js-friends">
+                    
+                      <a class="main-nav-link switch-friends-link" href="https://hexo.io">Hexo</a>
+                    
+                      <a class="main-nav-link switch-friends-link" href="https://pages.github.com/">GitHub</a>
+                    
+                      <a class="main-nav-link switch-friends-link" href="http://moxfive.xyz/">MOxFIVE</a>
+                    
+                    </div>
+                </section>
+                
+
+                
+                
+                <section class="switch-part switch-part4">
+                
+                    <div id="js-aboutme">专注于前端</div>
+                </section>
+                
+            </div>
+        </div>
+    </header>                
+</div>
+    </div>
+    <div class="mid-col">
+      <nav id="mobile-nav">
+      <div class="overlay">
+          <div class="slider-trigger"></div>
+          <h1 class="header-author js-mobile-header hide"><a href="/" title="回到主页">康兴华</a></h1>
+      </div>
+    <div class="intrude-less">
+        <header id="header" class="inner">
+            <a href="/" class="profilepic">
+                <img src="/img/avatar.png" class="animated zoomIn">
+            </a>
+            <hgroup>
+              <h1 class="header-author"><a href="/" title="回到主页">康兴华</a></h1>
+            </hgroup>
+            
+            <nav class="header-menu">
+                <ul>
+                
+                    <li><a href="/">主页</a></li>
+                
+                    <li><a href="/archives/">所有文章</a></li>
+                
+                    <li><a href="/tags/">标签云</a></li>
+                
+                    <li><a href="/about/">关于我</a></li>
+                
+                <div class="clearfix"></div>
+                </ul>
+            </nav>
+            <nav class="header-nav">
+                        <ul class="social">
+                            
+                                <a class="fa Email" target="_blank" href="mailto:kangxinghua@gmail.com" title="Email"></a>
+                            
+                                <a class="fa GitHub" target="_blank" href="https://github.com/kangxinghua" title="GitHub"></a>
+                            
+                                <a class="fa RSS" target="_blank" href="/atom.xml" title="RSS"></a>
+                            
+                        </ul>
+            </nav>
+        </header>                
+    </div>
+    <link class="menu-list" tags="标签" friends="友情链接" about="关于我">
+</nav>
+      <div class="body-wrap"><article id="post-Idempotent" class="article article-type-post" itemscope="" itemprop="blogPost">
+  
+    <div class="article-meta">
+      <a href="/2016/10/27/Idempotent/" class="article-date">
+      <time datetime="2016-10-27T14:57:33.000Z" itemprop="datePublished">2016-10-27</time>
+</a>
+
+
+    </div>
+  
+  <div class="article-inner">
+    
+      <input type="hidden" class="isFancy">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      幂等性
+    </h1>
+  
+
+      </header>
+      
+      <div class="article-info article-info-post">
+        
+
+        
+    <div class="article-tag tagcloud">
+        <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/笔记/">笔记</a></li></ul>
+    </div>
+
+        <div class="clearfix"></div>
+      </div>
+      
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+          
+        <h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>现在稍微有点规模的网站和大型应用都不再是单机模式，而是分布式应用，基于多机器的集群构建的应用，这服务能力就可以基本实现横向扩展（scale out），不会像单机模式下的纵向扩容（scale up)会受到单机服务能力的上限限制。另外随着”<a href="http://martinfowler.com/articles/microservices.html" target="_blank" rel="noopener">微服务</a>“概念的火爆，很多应用在构建之处就已经走上了分布式的道路。所有就目前行业的发展来，基于分布式应用会越来越普遍，甚至变为常态。加上”<a href="https://www.docker.com/" target="_blank" rel="noopener">docker</a>“的这些容器技术的出现，应用分布式工具也会越来越成熟。<br><a id="more"></a></p>
+<h1 id="分布式的复杂性"><a href="#分布式的复杂性" class="headerlink" title="分布式的复杂性"></a>分布式的复杂性</h1><p>众所周知，构建分布式应用所面临的复杂性远远超过集中式的单一应用，导致复杂性的因素有很多，在此只提一点：<strong>网络不可靠</strong>。在单一进程内部，对一个函数的调用，结果只有种–成功和失败，失败的情况下，调用者可以决定做一些事情弥补。但是在跨进程调用中，对一个远程（也可以在同一节点上）进程上运行的函数调用除了会得到成功和失败，还会有第三种情况–超时，这个现象被称为分布式三状态。这个是困扰分布式应用构建的最核心因素之一，很多分布式应用的复杂度之所以这么高也是因为三状态中的超时引起的。 </p>
+<p>简单看看超时给我们带来困扰，进程A调用进程B上的函数f，对于成功和失败的结果，相信和单机下一样，进程A都可以进行很好地处理，因为结果是很明确的。如果进程A调用f之后，在允许的等待最大时间内没有返回结果，就是调用超时了，此时进程A能做什么？其实进程A什么都做不了，因为超时是一个不明确的结果——成功和失败都有可能。详细解释下可能的情况：</p>
+<ul>
+<li>成功的情况：进程A把数据通过网络传输到进程B上，f执行成功，通 网络返回执行结果给进程A，可是网络不太好，传输失败了，进程A并 未在指定时间内收到结果，认为超时了。</li>
+<li>失败的情况：情况和成功的情况差不多，只是f执行失败了，但是结 果依然传输失败，进程A也认为执行超时了。</li>
+<li>未执行的情况：进程A的数据发送到进程B所在的节点过程中网络失败 了，或者发送到了进程B所在的机器上，但是进程B没有消费掉在TCP 网络层的数据等等   </li>
+</ul>
+<p>由此可见，进程A对于超时确实无能为力，有太多的可能存在的情况了。但是分布式协作过程中又必须解决这个问题，不然分布式应用是没意义的，这种情况下，一般会采用让进程A尝试重试——即重复发起之前的调用。但是这样也可能会带来问题，因为超时的那次调用可能已经成功了，再次以同样的参数调用f会不会带来额外的问题？这就引出本文的主角——<strong><a href="http://baike.baidu.com/view/2067025.htm" target="_blank" rel="noopener">幂等性</a></strong></p>
+<h1 id="幂等性"><a href="#幂等性" class="headerlink" title="幂等性"></a>幂等性</h1><p>幂等性本来是一个数学概念，在计算机方面用来表示对同一个过程应用相同的参数多次和应用一次产生的效果是一样，这样的过程即被称为满足幂等性。  </p>
+<p>有了这个概念之后，假如之前的f是满足幂等性的，那么是不是意味着进程A在调用f超时之后，可以继续重复调用f多次？这样最起码进程A可以在超时情况下做一些促进事情正向发展的努力。所以这种方式是分布式节点间常用的方式，那么如何保证幂等呢？</p>
+<h1 id="如何实现幂等行"><a href="#如何实现幂等行" class="headerlink" title="如何实现幂等行"></a>如何实现幂等行</h1><p>在考虑实现幂等之前，先看看有哪些操作是天然幂等的，以SQL为例。<br><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">update</span> tab1 <span class="keyword">set</span> col1 = <span class="number">1</span> <span class="keyword">where</span> <span class="keyword">id</span> = <span class="number">2</span></span><br></pre></td></tr></table></figure></p>
+<p>这样的更新语句，无论执行多少次结果都是不受影响的，所以是幂等的。<br><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">update</span> tab1 <span class="keyword">set</span> col1 = col1 + <span class="number">1</span> <span class="keyword">where</span> <span class="keyword">id</span> =<span class="number">2</span></span><br></pre></td></tr></table></figure></p>
+<p>这样的更新语句会随着每次更新不断变化，所以不是幂等的。所以在考虑之前，先识别出幂等和非幂等操作。  </p>
+<p>业务系统实现幂等的通用方式：一般是排重表校验，在业务操作所在的库建一张小表，名称暂时搞成dup_forbidden，核心字段就一个biz_id，并且在这个字段上建立一个unique index，其他字段可以根据业务需求来扩充。那么原来的业务f实现幂等的伪代码如下：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">begin</span> <span class="keyword">transaction</span>;</span><br><span class="line">count = <span class="keyword">insert</span> <span class="keyword">ignore</span> dup_forbidden (...biz_id...) <span class="keyword">value</span>(...biz_id...)</span><br><span class="line"><span class="keyword">if</span> (<span class="keyword">count</span> &gt; <span class="number">0</span>) &#123;</span><br><span class="line">  f(biz_id)</span><br><span class="line">&#125; </span><br><span class="line"><span class="keyword">commit</span>;</span><br></pre></td></tr></table></figure>
+<p>可以认为这是一套业务系统实现幂等的模板做法，通过<a href="http://dev.mysql.com/doc/refman/5.5/en/insert.html" target="_blank" rel="noopener">insert</a> ignore返回值来判断是否已经执行过了，但是针对不同的情况可能还有变化。使用事务的目的是为了保证f和dup_forbidden的操作同时成功和失败。本质上来看，dup_forbidden表就是通过unique index来屏蔽对f的多次调用，事实上很多业务已经存在dup_forbidden表的功能。  </p>
+<p>考虑如下场景：在一个面向交易的分布式应用中，支付子系统完成了支付功能，支付子系统通知订单子系统，通知的方式无非是调用订单子系统的一个函数f而已，只是调用的方式分为同步和异步。无论是同步还是异步，f都可能存在超时，所以为了支持重试，f必须是幂等的。f会首先根据传入的订单号来查找订单，检查订单状态。如果是已经支付，就会直接返回成功。如果是待支付状态，那么会尝试锁定（悲观锁和乐观锁）订单，修改状态，指定其他操作，其中锁定只是为了防止并发操作。伪代码实现如下：<br><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">begin</span> <span class="keyword">transaction</span>;</span><br><span class="line">count = <span class="keyword">update</span> deal_tab <span class="keyword">set</span> <span class="keyword">status</span> = paid <span class="keyword">where</span> <span class="keyword">id</span> = xx_id <span class="keyword">and</span> <span class="keyword">status</span> = unpaid</span><br><span class="line"><span class="keyword">if</span> (<span class="keyword">count</span> &gt; <span class="number">0</span>) &#123;</span><br><span class="line">  f(xx_id)</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">commit</span>;</span><br></pre></td></tr></table></figure></p>
+<p>从这个例子可以看出deal_tab订单表本身已经可以作为dup_forbidden表的作用了，所以insert防重操作变成update来实现，当然这个是乐观锁的版本。悲观锁的版本如下：<br><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">begin</span> <span class="keyword">transaction</span>;</span><br><span class="line">deal = <span class="keyword">select</span> * <span class="keyword">from</span> deal_tab <span class="keyword">where</span> <span class="keyword">id</span> = xx_id <span class="keyword">for</span> <span class="keyword">update</span></span><br><span class="line"><span class="keyword">if</span> (deal.status == paid) &#123;</span><br><span class="line">  <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">&#125; else if (deal.status = unpaid) &#123;</span><br><span class="line">  f(xx_id)</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">commit</span>;</span><br></pre></td></tr></table></figure></p>
+<p>当然基于悲观锁的做法对于高并发的系统是不建议的，毕竟长时间锁定记录会降低系统的TPS。  </p>
+<p>当然，所有这些方案都是基于业务存在唯一的业务编号来设计实现的，可能会存在完全没有业务编号的吗？答案是it depends。即使没有完全唯一的编号，我们也可以人为生成编号，比如调用方负责生成调用编号，同一个调用编号发起的多次调用都被视为一次调用，既可以作为唯一键来排重。事实上，这种情况确实比较少！</p>
+<h1 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h1><p>业务系统实现幂等性的方式基本确定。系统关键接口的幂等性为以后系统的长期发展，特别是往分布式方向发展打下了很好的根基，可以大大简化分布式应用的构建复杂度。</p>
+<blockquote>
+<p>转载 <a href="http://yongpoliu.com/idempotent/" target="_blank" rel="noopener">系统幂等以及常用实现方式</a></p>
+</blockquote>
+<h1 id="2016-10-21-20-54-46-康兴华"><a href="#2016-10-21-20-54-46-康兴华" class="headerlink" title="2016-10-21 20:54:46 康兴华"></a>2016-10-21 20:54:46 康兴华</h1><p>我认为幂等性的核心在于重试或重复请求的时候服务器如何判断是同一请求，一般就是在调用f方法的之前,先生成一个ticket（最好能区分时间先后用时间戳），后面调用的时候将ticket以参数的形式传递给服务器，在服务器端用用数据库表字段unique index来屏蔽对f的多次调用。  </p>
+
+      
+    </div>
+    
+  </div>
+  
+    
+    <div class="copyright">
+        <p><span>本文标题:</span><a href="/2016/10/27/Idempotent/">幂等性</a></p>
+        <p><span>文章作者:</span><a href="/" title="回到主页">康兴华</a></p>
+        <p><span>发布时间:</span>2016-10-27, 22:57:33</p>
+        <p><span>最后更新:</span>2018-10-22, 14:34:56</p>
+        <p>
+            <span>原始链接:</span><a class="post-url" href="/2016/10/27/Idempotent/" title="幂等性">http://kxh.ink/2016/10/27/Idempotent/</a>
+            <span class="copy-path" data-clipboard-text="原文: http://kxh.ink/2016/10/27/Idempotent/　　作者: 康兴华" title="点击复制文章链接"><i class="fa fa-clipboard"></i></span>
+            <script> var clipboard = new Clipboard('.copy-path'); </script>
+        </p>
+        <p>
+            <span>许可协议:</span><i class="fa fa-creative-commons"></i> <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/4.0/" title="CC BY-NC-SA 4.0 International" target="_blank">"署名-非商用-相同方式共享 4.0"</a> 转载请保留原文链接及作者。
+        </p>
+    </div>
+
+
+
+    <nav id="article-nav">
+        
+            <div id="article-nav-newer" class="article-nav-title">
+                <a href="/2016/10/27/distributed-tx-evolution/">
+                    分布式事务
+                </a>
+            </div>
+        
+        
+            <div id="article-nav-older" class="article-nav-title">
+                <a href="/2016/10/26/Consistent-Hashing/">
+                    一致性哈希算法的理解与实践(Java)
+                </a>
+            </div>
+        
+    </nav>
+
+  
+</article>
+
+    <div id="toc" class="toc-article">
+        <strong class="toc-title">文章目录</strong>
+        
+            <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#前言"><span class="toc-number">1.</span> <span class="toc-text">前言</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#分布式的复杂性"><span class="toc-number">2.</span> <span class="toc-text">分布式的复杂性</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#幂等性"><span class="toc-number">3.</span> <span class="toc-text">幂等性</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#如何实现幂等行"><span class="toc-number">4.</span> <span class="toc-text">如何实现幂等行</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#总结"><span class="toc-number">5.</span> <span class="toc-text">总结</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2016-10-21-20-54-46-康兴华"><span class="toc-number">6.</span> <span class="toc-text">2016-10-21 20:54:46 康兴华</span></a></li></ol>
+        
+    </div>
+    <style>
+        .left-col .switch-btn,
+        .left-col .switch-area {
+            display: none;
+        }
+        .toc-level-3 i,
+        .toc-level-3 ol {
+            display: none !important;
+        }
+    </style>
+
+    <input type="button" id="tocButton" value="隐藏目录" title="点击按钮隐藏或者显示文章目录">
+
+    <script>
+        yiliaConfig.toc = ["隐藏目录", "显示目录", !!"false"];
+    </script>
+
+
+
+    
+<div class="share">
+    
+        <div class="bdsharebuttonbox">
+            <a href="#" class="fa fa-twitter bds_twi" data-cmd="twi" title="分享到推特"></a>
+            <a href="#" class="fa fa-weibo bds_tsina" data-cmd="tsina" title="分享到新浪微博"></a>
+            <a href="#" class="fa fa-qq bds_sqq" data-cmd="sqq" title="分享给 QQ 好友"></a>
+            <a href="#" class="fa fa-files-o bds_copy" data-cmd="copy" title="复制网址"></a>
+            <a href="#" class="fa fa fa-envelope-o bds_mail" data-cmd="mail" title="通过邮件分享"></a>
+            <a href="#" class="fa fa-weixin bds_weixin" data-cmd="weixin" title="生成文章二维码"></a>
+            <a href="#" class="fa fa-share-alt bds_more" data-cmd="more"></a>
+        </div>
+        <script>
+            window._bd_share_config={
+                "common":{"bdSnsKey":{},"bdText":"幂等性　| 康兴华　","bdMini":"2","bdMiniList":false,"bdPic":"","bdStyle":"0","bdSize":"24"},"share":{}};with(document)0[(getElementsByTagName('head')[0]||body).appendChild(createElement('script')).src='http://bdimg.share.baidu.com/static/api/js/share.js?v=89860593.js?cdnversion='+~(-new Date()/36e5)];
+        </script>
+    
+
+    
+</div>
+
+
+
+
+
+
+
+    
+
+
+
+
+    <div class="scroll" id="post-nav-button">
+        
+            <a href="/2016/10/27/distributed-tx-evolution/" title="上一篇: 分布式事务">
+                <i class="fa fa-angle-left"></i>
+            </a>
+        
+
+        <a title="文章列表"><i class="fa fa-bars"></i><i class="fa fa-times"></i></a>
+
+        
+            <a href="/2016/10/26/Consistent-Hashing/" title="下一篇: 一致性哈希算法的理解与实践(Java)">
+                <i class="fa fa-angle-right"></i>
+            </a>
+        
+    </div>
+
+    <ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2018/11/01/how-to-calculate-threadpool-size/README/">how-to-calculate-threadpool-size/README</a></li><li class="post-list-item"><a class="post-list-link" href="/2018/10/31/how-to-calculate-threadpool-size/">如何合理地估算线程池大小？</a></li><li class="post-list-item"><a class="post-list-link" href="/2018/09/19/HashMap-System-Learning/">深入理解HashMap</a></li><li class="post-list-item"><a class="post-list-link" href="/2018/06/24/Lock-Condition/">显示锁（Lock）及Condition的学习与使用</a></li><li class="post-list-item"><a class="post-list-link" href="/2018/06/21/Callable-Future-FutureTask/">Callable和Future、FutureTask的使用</a></li><li class="post-list-item"><a class="post-list-link" href="/2018/05/04/ThreadPoolPrinciple/">从使用到原理学习Java线程池</a></li><li class="post-list-item"><a class="post-list-link" href="/2017/02/16/Daemon-Thread/">守护线程</a></li><li class="post-list-item"><a class="post-list-link" href="/2017/02/15/Pass-By-Value/">Java中的参数传递——值传递、引用传递</a></li><li class="post-list-item"><a class="post-list-link" href="/2017/01/13/happen-before/">Java 内存模型</a></li><li class="post-list-item"><a class="post-list-link" href="/2017/01/06/summary-one/">第一部分总结</a></li><li class="post-list-item"><a class="post-list-link" href="/2017/01/05/synchronization-tool-class/">同步工具类</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/12/22/DuiXiangGongXiang/">对象的共享</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/12/06/BingFaJianShi/">并发简史</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/11/15/syn-jmm-visibility/">同步和Java内存模型 (三)可见性</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/11/15/syn-jmm-atomicity/">同步和Java内存模型 (二)原子性</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/11/15/syn-jmm-pre/">同步与Java内存模型(一)序言</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/11/02/Git-CentOS-Install/">Git CentOS 源码安装</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/10/27/ACID-CAP-BASE/">从ACID到CAP到BASE</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/10/27/distributed-tx-evolution/">分布式事务</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/10/27/Idempotent/">幂等性</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/10/26/Consistent-Hashing/">一致性哈希算法的理解与实践(Java)</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/10/01/YanYiMam-XinYiShan/">言宜慢 心宜善</a></li></ul>
+
+
+
+
+    <script>
+        
+    </script>
+</div>
+      <footer id="footer">
+    <div class="outer">
+        <div id="footer-info">
+            <div class="footer-left">
+                <i class="fa fa-copyright"></i> 
+                2016-2018 康兴华
+            </div>
+            <div class="footer-right">
+                <a href="http://hexo.io/" target="_blank" title="快速、简洁且高效的博客框架">Hexo</a>  Theme <a href="https://github.com/MOxFIVE/hexo-theme-yelee" target="_blank" title="简而不减 Hexo 双栏博客主题  v3.5">Yelee</a> by MOxFIVE <i class="fa fa-heart animated infinite pulse"></i>
+            </div>
+        </div>
+        
+            <div class="visit">
+                
+                    <span id="busuanzi_container_site_pv" style="display:none">
+                        <span id="site-visit" title="本站到访数"><i class="fa fa-user" aria-hidden="true"></i><span id="busuanzi_value_site_uv"></span>
+                        </span>
+                    </span>
+                
+                
+                    <span>| </span>
+                
+                
+                    <span id="busuanzi_container_page_pv" style="display:none">
+                        <span id="page-visit" title="本页阅读量"><i class="fa fa-eye animated infinite pulse" aria-hidden="true"></i><span id="busuanzi_value_page_pv"></span>
+                        </span>
+                    </span>
+                
+            </div>
+        
+    </div>
+</footer>
+    </div>
+    
+<script data-main="/js/main.js" src="//cdn.bootcss.com/require.js/2.2.0/require.min.js"></script>
+
+    <script>
+        $(document).ready(function() {
+            var iPad = window.navigator.userAgent.indexOf('iPad');
+            if (iPad > -1 || $(".left-col").css("display") === "none") {
+                var bgColorList = ["#9db3f4", "#414141", "#e5a859", "#f5dfc6", "#c084a0", "#847e72", "#cd8390", "#996731"];
+                var bgColor = Math.ceil(Math.random() * (bgColorList.length - 1));
+                $("body").css({"background-color": bgColorList[bgColor], "background-size": "cover"});
+            }
+            else {
+                var backgroundnum = 5;
+                var backgroundimg = "url(/background/bg-x.jpg)".replace(/x/gi, Math.ceil(Math.random() * backgroundnum));
+                $("body").css({"background": backgroundimg, "background-attachment": "fixed", "background-size": "cover"});
+            }
+        })
+    </script>
+
+
+
+
+
+<div class="scroll" id="scroll">
+    <a href="#" title="返回顶部"><i class="fa fa-arrow-up"></i></a>
+    <a href="#comments" onclick="load$hide();" title="查看评论"><i class="fa fa-comments-o"></i></a>
+    <a href="#footer" title="转到底部"><i class="fa fa-arrow-down"></i></a>
+</div>
+<script>
+    // Open in New Window
+    
+        var oOpenInNew = {
+            
+            
+            
+            
+            
+            
+             archives: ".archive-article-title", 
+             miniArchives: "a.post-list-link", 
+            
+             friends: "#js-friends a", 
+             socail: ".social a" 
+        }
+        for (var x in oOpenInNew) {
+            $(oOpenInNew[x]).attr("target", "_blank");
+        }
+    
+</script>
+
+<script async src="https://dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js">
+</script>
+  </div>
+</body>
+</html>

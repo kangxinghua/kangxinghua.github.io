@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head><meta name="generator" content="Hexo 3.8.0">
+
+    <!--[if lt IE 9]>
+        <style>body {display: none; background: none !important} </style>
+        <meta http-equiv="Refresh" Content="0; url=//outdatedbrowser.com/" />
+    <![endif]-->
+
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge, chrome=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="format-detection" content="telephone=no">
+<meta name="author" content="康兴华">
+
+
+
+<meta name="description" content="分布式事务背景现在分布式系统一般由多个独立的子系统组成，多个子系统通过进程间通信（RPC）互相协作配合完成各个功能。有很多用例会跨多个子系统才能完成，比较典型的是电子商务网站的下单支付流程，至少会涉及交易系统和支付系统，而且这个过程中会涉及到事务的概念，即保证交易系统和支付系统的数据一致性。通常我们谈及的事务是指单机资源的ACID属性，所以此处我们称这种跨系统的事务为分布式事务。">
+<meta name="keywords" content="笔记">
+<meta property="og:type" content="article">
+<meta property="og:title" content="分布式事务">
+<meta property="og:url" content="http://kxh.ink/2016/10/27/distributed-tx-evolution/index.html">
+<meta property="og:site_name" content="康兴华">
+<meta property="og:description" content="分布式事务背景现在分布式系统一般由多个独立的子系统组成，多个子系统通过进程间通信（RPC）互相协作配合完成各个功能。有很多用例会跨多个子系统才能完成，比较典型的是电子商务网站的下单支付流程，至少会涉及交易系统和支付系统，而且这个过程中会涉及到事务的概念，即保证交易系统和支付系统的数据一致性。通常我们谈及的事务是指单机资源的ACID属性，所以此处我们称这种跨系统的事务为分布式事务。">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:updated_time" content="2018-10-22T06:34:56.127Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="分布式事务">
+<meta name="twitter:description" content="分布式事务背景现在分布式系统一般由多个独立的子系统组成，多个子系统通过进程间通信（RPC）互相协作配合完成各个功能。有很多用例会跨多个子系统才能完成，比较典型的是电子商务网站的下单支付流程，至少会涉及交易系统和支付系统，而且这个过程中会涉及到事务的概念，即保证交易系统和支付系统的数据一致性。通常我们谈及的事务是指单机资源的ACID属性，所以此处我们称这种跨系统的事务为分布式事务。">
+
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+
+
+    <link rel="alternate" href="/atom.xml" title="康兴华" type="application/atom+xml">
+
+
+
+    <link rel="shortcut icon" href="/favicon.png">
+
+
+
+    <link href="//cdn.bootcss.com/animate.css/3.5.1/animate.min.css" rel="stylesheet">
+
+
+
+    <link href="//cdn.bootcss.com/fancybox/2.1.5/jquery.fancybox.min.css" rel="stylesheet">
+
+
+
+    <script src="//cdn.bootcss.com/pace/1.0.2/pace.min.js"></script>
+    <link href="//cdn.bootcss.com/pace/1.0.2/themes/blue/pace-theme-minimal.css" rel="stylesheet">
+
+
+<link rel="stylesheet" href="/css/style.css">
+
+
+
+<link href="//cdn.bootcss.com/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet">
+
+
+<title>分布式事务 | 康兴华</title>
+
+<script src="//cdn.bootcss.com/jquery/2.2.4/jquery.min.js"></script>
+<script src="//cdn.bootcss.com/clipboard.js/1.5.10/clipboard.min.js"></script>
+
+<script>
+    var yiliaConfig = {
+        fancybox: true,
+        animate: true,
+        isHome: false,
+        isPost: true,
+        isArchive: false,
+        isTag: false,
+        isCategory: false,
+        fancybox_js: "//cdn.bootcss.com/fancybox/2.1.5/jquery.fancybox.min.js",
+        scrollreveal: "//cdn.bootcss.com/scrollReveal.js/3.1.4/scrollreveal.min.js",
+        search: true
+    }
+</script>
+
+
+    <script> yiliaConfig.jquery_ui = [false]; </script>
+
+
+
+    <script> yiliaConfig.rootUrl = "\/";</script>
+
+
+
+
+
+
+</head></html>
+<body>
+  <div id="container">
+    <div class="left-col">
+    <div class="overlay"></div>
+<div class="intrude-less">
+    <header id="header" class="inner">
+        <a href="/" class="profilepic">
+            <img src="/img/avatar.png" class="animated zoomIn">
+        </a>
+        <hgroup>
+          <h1 class="header-author"><a href="/">康兴华</a></h1>
+        </hgroup>
+
+        
+
+        
+            <form id="search-form">
+            <input type="text" id="local-search-input" name="q" placeholder="search..." class="search form-control" autocomplete="off" autocorrect="off" searchonload="true">
+            <i class="fa fa-times" onclick="resetSearch()"></i>
+            </form>
+            <div id="local-search-result"></div>
+            <p class="no-result">No results found <i class="fa fa-spinner fa-pulse"></i></p>
+        
+
+
+        
+            <div id="switch-btn" class="switch-btn">
+                <div class="icon">
+                    <div class="icon-ctn">
+                        <div class="icon-wrap icon-house" data-idx="0">
+                            <div class="birdhouse"></div>
+                            <div class="birdhouse_holes"></div>
+                        </div>
+                        <div class="icon-wrap icon-ribbon hide" data-idx="1">
+                            <div class="ribbon"></div>
+                        </div>
+                        
+                        <div class="icon-wrap icon-link hide" data-idx="2">
+                            <div class="loopback_l"></div>
+                            <div class="loopback_r"></div>
+                        </div>
+                        
+                        
+                        <div class="icon-wrap icon-me hide" data-idx="3">
+                            <div class="user"></div>
+                            <div class="shoulder"></div>
+                        </div>
+                        
+                    </div>
+                    
+                </div>
+                <div class="tips-box hide">
+                    <div class="tips-arrow"></div>
+                    <ul class="tips-inner">
+                        <li>菜单</li>
+                        <li>标签</li>
+                        
+                        <li>友情链接</li>
+                        
+                        
+                        <li>关于我</li>
+                        
+                    </ul>
+                </div>
+            </div>
+        
+
+        <div id="switch-area" class="switch-area">
+            <div class="switch-wrap">
+                <section class="switch-part switch-part1">
+                    <nav class="header-menu">
+                        <ul>
+                        
+                            <li><a href="/">主页</a></li>
+                        
+                            <li><a href="/archives/">所有文章</a></li>
+                        
+                            <li><a href="/tags/">标签云</a></li>
+                        
+                            <li><a href="/about/">关于我</a></li>
+                        
+                        </ul>
+                    </nav>
+                    <nav class="header-nav">
+                        <ul class="social">
+                            
+                                <a class="fa Email" href="mailto:kangxinghua@gmail.com" title="Email"></a>
+                            
+                                <a class="fa GitHub" href="https://github.com/kangxinghua" title="GitHub"></a>
+                            
+                                <a class="fa RSS" href="/atom.xml" title="RSS"></a>
+                            
+                        </ul>
+                    </nav>
+                </section>
+                
+                
+                <section class="switch-part switch-part2">
+                    <div class="widget tagcloud" id="js-tagcloud">
+                        <ul class="tag-list"><li class="tag-list-item"><a class="tag-list-link" href="/tags/Java-并发编程实战/">Java 并发编程实战</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/笔记/">笔记</a></li></ul>
+                    </div>
+                </section>
+                
+                
+                
+                <section class="switch-part switch-part3">
+                    <div id="js-friends">
+                    
+                      <a class="main-nav-link switch-friends-link" href="https://hexo.io">Hexo</a>
+                    
+                      <a class="main-nav-link switch-friends-link" href="https://pages.github.com/">GitHub</a>
+                    
+                      <a class="main-nav-link switch-friends-link" href="http://moxfive.xyz/">MOxFIVE</a>
+                    
+                    </div>
+                </section>
+                
+
+                
+                
+                <section class="switch-part switch-part4">
+                
+                    <div id="js-aboutme">专注于前端</div>
+                </section>
+                
+            </div>
+        </div>
+    </header>                
+</div>
+    </div>
+    <div class="mid-col">
+      <nav id="mobile-nav">
+      <div class="overlay">
+          <div class="slider-trigger"></div>
+          <h1 class="header-author js-mobile-header hide"><a href="/" title="回到主页">康兴华</a></h1>
+      </div>
+    <div class="intrude-less">
+        <header id="header" class="inner">
+            <a href="/" class="profilepic">
+                <img src="/img/avatar.png" class="animated zoomIn">
+            </a>
+            <hgroup>
+              <h1 class="header-author"><a href="/" title="回到主页">康兴华</a></h1>
+            </hgroup>
+            
+            <nav class="header-menu">
+                <ul>
+                
+                    <li><a href="/">主页</a></li>
+                
+                    <li><a href="/archives/">所有文章</a></li>
+                
+                    <li><a href="/tags/">标签云</a></li>
+                
+                    <li><a href="/about/">关于我</a></li>
+                
+                <div class="clearfix"></div>
+                </ul>
+            </nav>
+            <nav class="header-nav">
+                        <ul class="social">
+                            
+                                <a class="fa Email" target="_blank" href="mailto:kangxinghua@gmail.com" title="Email"></a>
+                            
+                                <a class="fa GitHub" target="_blank" href="https://github.com/kangxinghua" title="GitHub"></a>
+                            
+                                <a class="fa RSS" target="_blank" href="/atom.xml" title="RSS"></a>
+                            
+                        </ul>
+            </nav>
+        </header>                
+    </div>
+    <link class="menu-list" tags="标签" friends="友情链接" about="关于我">
+</nav>
+      <div class="body-wrap"><article id="post-distributed-tx-evolution" class="article article-type-post" itemscope="" itemprop="blogPost">
+  
+    <div class="article-meta">
+      <a href="/2016/10/27/distributed-tx-evolution/" class="article-date">
+      <time datetime="2016-10-27T15:01:15.000Z" itemprop="datePublished">2016-10-27</time>
+</a>
+
+
+    </div>
+  
+  <div class="article-inner">
+    
+      <input type="hidden" class="isFancy">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      分布式事务
+    </h1>
+  
+
+      </header>
+      
+      <div class="article-info article-info-post">
+        
+
+        
+    <div class="article-tag tagcloud">
+        <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/笔记/">笔记</a></li></ul>
+    </div>
+
+        <div class="clearfix"></div>
+      </div>
+      
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+          
+        <h1 id="分布式事务背景"><a href="#分布式事务背景" class="headerlink" title="分布式事务背景"></a>分布式事务背景</h1><p>现在分布式系统一般由多个独立的子系统组成，多个子系统通过进程间通信（<a href="http://en.wikipedia.org/wiki/Remote_procedure_call" target="_blank" rel="noopener">RPC</a>）互相协作配合完成各个功能。有很多用例会跨多个子系统才能完成，比较典型的是电子商务网站的下单支付流程，至少会涉及交易系统和支付系统，而且这个过程中会涉及到事务的概念，即保证交易系统和支付系统的数据一致性。通常我们谈及的事务是指单机资源的<a href="http://baike.baidu.com/subview/600227/5926023.htm" target="_blank" rel="noopener">ACID</a>属性，所以此处我们称这种跨系统的事务为分布式事务。<br><a id="more"></a></p>
+<h1 id="分布式事务实现方式"><a href="#分布式事务实现方式" class="headerlink" title="分布式事务实现方式"></a>分布式事务实现方式</h1><p>对于分布式事务，通常采用<a href="https://zh.wikipedia.org/wiki/%E4%BA%8C%E9%98%B6%E6%AE%B5%E6%8F%90%E4%BA%A4" target="_blank" rel="noopener">2PC</a>（两阶段提交）以及相应的变种3PC来实现（因为2PC有致命的问题，<a href="https://zh.wikipedia.org/wiki/%E4%B8%89%E9%98%B6%E6%AE%B5%E6%8F%90%E4%BA%A4" target="_blank" rel="noopener">3PC</a>通过拆分2PC的第一阶段避免了极端情况下的问题，详情请参考coolshell），使用两阶段提交来协调所有参与到分布式事务中的各个事务资源，Java中也提供了JTA规范来标准化分布式事务接口，目前Mysql和PostgreSQL也都默认实现XA接口，从而支持分布式事务了。而且对于开发人员来说，使用分布式事务和单机事务并没有太大的差异，最起码从编程模型上来看，也就实现了所谓的“透明”</p>
+<h1 id="分布式事务的弊端"><a href="#分布式事务的弊端" class="headerlink" title="分布式事务的弊端"></a>分布式事务的弊端</h1><p>前文也讲到了，因为JTA的标准化，使得分布式事务和单机事务的编程模型看起来很接近，从而实现了“透明”，但是单机事务和分布式事务最大的差异是性能并不“透明”，单机事务的资源都在一台节点上完成变更，不会出现跨进程、跨网络的情况，使得单机事务的性能很好。反观分布式事务，会跨多个进程，跨网络，甚至会跨数据中心，对于跨网络的开销和本地事务操作的对比，可以参考网上的资料。</p>
+<p>在其中一个事务执行成功之后并且还未提交之前，会对资源进行锁定，一般是加上X锁，在锁定期间对被锁定的资源访问是受限的，直到通过协调的其他各个事务资源都提交才会释放，由此可见，资源被锁定的时间相比单机事务大大加长了，也就直接导致了系统的TPS降低，单位时间执行的事务数量减少了，系统的吞吐量也会降低，同时意味着支持同样数量的TPS需要加入更多的节点。</p>
+<p>不仅如此，由于各个事务资源对应的子系统必须完全执行成功才能完成整个功能，那么意味着整个功能的可用性降低了，假如需要三个子系统来协调完成功能A，每个系统的可用性是99.9%，这样功能A的可用性就是99.9%<em>99.9%</em>99.9%=99.7%，如果有更多的子系统参与进来，后果可想而知，系统可用性会变得不可接受。</p>
+<p>另外，根据木桶原理，决定整个协调过程完成时间的是执行最慢的节点，其他节点则只能等待，整个系统都会跟着慢下来。  </p>
+<h1 id="强一致性模型的必要性"><a href="#强一致性模型的必要性" class="headerlink" title="强一致性模型的必要性"></a>强一致性模型的必要性</h1><p>既然分布式事务有诸多缺点，那么为什么我们还在使用呢？有没有更好的解决方案来改进或者替换呢？如果我们只是针对分布式事务去优化的话，发现其实能改进的空间很小，毕竟瓶颈在分布式事务模型本身，“我们无法用我们制造问题的思维方式去解决我们的制造的问题”，爱因斯坦如是说。</p>
+<p>那我们回到问题的根源：为什么我们需要分布式事务？因为我们需要各个资源数据一致性。对，看起来合情合理，我们需要，而分布式事务恰好解决这个问题，但是分布式事务提供的是强一致性，试问下，我们真的需要强一致性吗？大多数业务场景都能容忍短暂的不一致，只是不同的业务对不一致的时间窗口要求不同罢了，像银行转账业务，中间有几小时几天的不一致窗口，用户是可以理解和容忍的，而像电商支付业务，用户的容忍度可能只是30秒的样子，其实30秒对于系统而言已经很长了，还有搜索引擎的收录等等。</p>
+<p>通过这些例子，可以确定我们可以忍受短暂的不一致，即我们不需要强一致性，只需要最终一致性。对要求的进一步降低，是不是意味着可以有更加合理的方案呢？ </p>
+<h1 id="单机事务-异步复制"><a href="#单机事务-异步复制" class="headerlink" title="单机事务+异步复制"></a>单机事务+异步复制</h1><p>以订单子系统和支付子系统为例，如下：</p>
+<table>
+<thead>
+<tr>
+<th>payment</th>
+<th>trade</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>payment_record</td>
+<td>trade_record</td>
+</tr>
+<tr>
+<td>user_account</td>
+<td>tx_duplication</td>
+</tr>
+<tr>
+<td>tx_info</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p>如上图，payment是支付系统，trade是订单系统，两个系统对应的数据库是分开的。支付完成之后，支付系统需要通知订单系统状态变更，从而开始接下来的操作。</p>
+<p>对于payment要执行的操作可以用伪代码表示如下：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">begin</span> tx;</span><br><span class="line">count = <span class="keyword">update</span> <span class="keyword">account</span> <span class="keyword">set</span> amount = amount - $&#123;cash&#125; <span class="keyword">where</span> uid = $&#123;uid&#125; <span class="keyword">and</span> amount &gt;= amount</span><br><span class="line"><span class="keyword">if</span> (<span class="keyword">count</span> &lt;= <span class="number">0</span>) <span class="keyword">return</span> <span class="literal">false</span></span><br><span class="line"><span class="keyword">update</span> payment_record <span class="keyword">set</span> <span class="keyword">status</span> = paid <span class="keyword">where</span> trade_id = $&#123;tradeId&#125;</span><br><span class="line"><span class="keyword">commit</span>;</span><br></pre></td></tr></table></figure>
+<p>对于trade要执行的操作可以用伪代码表示如下：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">begin</span> tx;</span><br><span class="line">count = <span class="keyword">update</span> trade_record <span class="keyword">set</span> <span class="keyword">status</span> = paid <span class="keyword">where</span> trade_id = $&#123;trade_id&#125; <span class="keyword">and</span> <span class="keyword">status</span> = unpaid</span><br><span class="line"><span class="keyword">if</span> (<span class="keyword">count</span> &lt;= <span class="number">0</span>) <span class="keyword">return</span> <span class="literal">false</span></span><br><span class="line"><span class="keyword">do</span> other things ...</span><br><span class="line"><span class="keyword">commit</span>;</span><br></pre></td></tr></table></figure>
+<p>但是对于这两段代码如何串起来是个问题，我们增加一个事务表，即图中的tx_info，来记录成功完成的支付事务，那么为了和支付信息一致，需要放入事务中，代码如下：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">begin</span> tx;</span><br><span class="line">count = <span class="keyword">update</span> <span class="keyword">account</span> <span class="keyword">set</span> amount = amount - $&#123;cash&#125; <span class="keyword">where</span> uid = $&#123;uid&#125; <span class="keyword">and</span> amount &gt;= amount</span><br><span class="line"><span class="keyword">if</span> (<span class="keyword">count</span> &lt;= <span class="number">0</span>) <span class="keyword">return</span> <span class="literal">false</span></span><br><span class="line"><span class="keyword">update</span> payment_record <span class="keyword">set</span> <span class="keyword">status</span> = paid <span class="keyword">where</span> trade_id = $&#123;tradeId&#125;</span><br><span class="line"><span class="keyword">insert</span> <span class="keyword">into</span> tx_info <span class="keyword">values</span>($&#123;trade_id&#125;,$&#123;amount&#125;...)</span><br><span class="line"><span class="keyword">commit</span>;</span><br></pre></td></tr></table></figure>
+<p>支付系统边界到此为止，简单吧？那么接下来就是订单系统启动时间程序去轮询访问（直接和间接）tx_info，拉取已经支付成功的订单信息，对每一条信息都执行trade系统的逻辑，伪代码如下：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">foreach trade_id in tx_info</span><br><span class="line">  <span class="keyword">do</span> trade_tx</span><br><span class="line"><span class="keyword">save</span> tx_info.id <span class="keyword">to</span> <span class="keyword">some</span> <span class="keyword">store</span></span><br></pre></td></tr></table></figure>
+<p>事无延迟取决于时间程序轮询间隔，这样我们做到了一致性，最终订单都会在支付之后的最大时间间隔内完成状态迁移。  </p>
+<p>等等，我们好像还差点东西，交易系统每次拉取数据的起点以及消费记录是否得记录下来，这样才能不遗漏不重复地执行，所以需要增加一张表用于排重，即上图中的tx_duplication。但是每次对tx_duplication表的插入要在trade_tx的事务中完成，伪代码如下：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">begin</span> tx;</span><br><span class="line">c = <span class="keyword">insert</span> <span class="keyword">ignore</span> tx_duplication <span class="keyword">values</span>($trade_id...)</span><br><span class="line"><span class="keyword">if</span> (c &lt;= <span class="number">0</span>) <span class="keyword">return</span> <span class="literal">false</span></span><br><span class="line"><span class="keyword">count</span> = <span class="keyword">update</span> trade_record <span class="keyword">set</span> <span class="keyword">status</span> = paid <span class="keyword">where</span> trade_id = $&#123;trade_id&#125; <span class="keyword">and</span> <span class="keyword">status</span> = unpaid</span><br><span class="line"><span class="keyword">if</span> (<span class="keyword">count</span> &lt;= <span class="number">0</span>) <span class="keyword">return</span> <span class="literal">false</span></span><br><span class="line"><span class="keyword">do</span> other things ...</span><br><span class="line"><span class="keyword">commit</span>;</span><br></pre></td></tr></table></figure>
+<p>另外，tx_duplication表中trade_id表上必须有唯一键，这个算是结合之前的幂等篇来保证trade_tx的操作是幂等的，到此为止，我们已经完全实现了异步复制实现多个单机事务一致性的目标。看起来是个完美的通用方案，不是吗？但是仔细看看也会明白，这个方案也会有自己的问题，比如交易系统要访问支付系统的数据库、系统要多增加几张表等等，我们可以抽取组件实现这些，但是依然隐藏不了那些表。那么是不是有更加优雅的方式来改进呢？答案是肯定的，接下来继续。</p>
+<h1 id="带有事务功能的MQ做中间人角色"><a href="#带有事务功能的MQ做中间人角色" class="headerlink" title="带有事务功能的MQ做中间人角色"></a>带有事务功能的MQ做中间人角色</h1><p>其实在上边的方案中，tx_info表所起到的作用就是队列作用，记录一个系统的表更，作为通知给需要感知的系统的事件。而时间程序去拉取只是系统去获取感兴趣事件的一个方式，而对应交易系统的本地事务只是对应消费事件的一个过程。在这样的描述下，这些功能就是一个MQ——消息中间件。如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">graph TB</span><br><span class="line">    subgraph trade</span><br><span class="line">    trade_record --- tx_duplication</span><br><span class="line">    end</span><br><span class="line">    subgraph payment</span><br><span class="line">    payment_reaord --- user_accout</span><br><span class="line">    end</span><br><span class="line">    user_accout--&gt;MQ</span><br><span class="line">    tx_duplication--&gt;MQ</span><br></pre></td></tr></table></figure>
+<p>这样tx_info表的功能就交给了MQ，消息消费的偏移量也不需要关心了，MQ会搞定的，但是tx_duplication还是必须存在的，因为MQ并不能避免消息的重复投递，这其中的原因有很多，主要是还是分布式的三态造成的，再次不详细描述。</p>
+<p>这要求MQ必须支持事务功能，可以达到本地事务和消息发出是一致性的，但是不必是强一致的。通常使用的方式如下的伪代码：  </p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">sendPrepare();</span><br><span class="line">isCommit = local_tx()</span><br><span class="line">if (isCommit) sendCommit()</span><br><span class="line">else sendRollback()</span><br></pre></td></tr></table></figure>
+<p>在做本地事务之前，先向MQ发送一个prepare消息，然后执行本地事务，本地事务提交成功的话，向MQ发送一个commit消息，否则发送一个rollback消息，取消之前的消息。MQ只会在收到commit确认才会将消息投递出去，所以这样的形式可以保证在一切正常的情况下，本地事务和MQ可以达到一致性。  </p>
+<p>但是分布式存在异常情况，网络超时，机器宕机等等，比如当系统执行了local_tx()成功之后，还没来得及将commit消息发送给MQ，或者说发送出去了，网络超时了等等原因，MQ没有收到commit，即commit消息丢失了，那么MQ就不会把prepare消息投递出去。如果这个无法保证的话，那么这个方案是不可行的。针对这种情况，MQ会根据策略去尝试询问（回调）发消息的系统（checkCommit）进行检查该消息是否应该投递出去或者丢弃，得到系统的确认之后，MQ会做投递还是丢弃，这样就完全保证了MQ和发消息的系统的一致性，从而保证了接收消息系统的一致性。  </p>
+<p>不过这个方案要求MQ的系统可用性必须非常高，至少要超过使用MQ的系统，这样才能保证依赖他的系统能稳定运行。目前提供这种机制的MQ并不多，个人了解到的有阿里的notify和ons。  </p>
+<h1 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h1><p>写在最后，对于数据库实现的异步复制方案是参考<a href="http://queue.acm.org/detail.cfm?id=1394128" target="_blank" rel="noopener">ebay</a>的架构师的一篇论文，详细讲述了实现过程，很经典，可以点链接进去看看。使用MQ的方案是一个比较成熟的方案，而且MQ方案不止带来了这么多好处，带来了异步化、重试机制、系统解耦，还可以在不同访问量的系统之间起到消峰缓冲的作用，可以把系统交互变得更加优雅。  </p>
+<blockquote>
+<p>转载 <a href="http://yongpoliu.com/distributed-tx-evolution/" target="_blank" rel="noopener">分布式事务演进</a></p>
+</blockquote>
+<h1 id="2016-10-21-23-07-38-康兴华"><a href="#2016-10-21-23-07-38-康兴华" class="headerlink" title="2016-10-21 23:07:38 康兴华"></a>2016-10-21 23:07:38 康兴华</h1><blockquote>
+<p>我们无法用我们制造问题的思维方式去解决我们的制造的问题。–爱因斯坦</p>
+</blockquote>
+
+      
+    </div>
+    
+  </div>
+  
+    
+    <div class="copyright">
+        <p><span>本文标题:</span><a href="/2016/10/27/distributed-tx-evolution/">分布式事务</a></p>
+        <p><span>文章作者:</span><a href="/" title="回到主页">康兴华</a></p>
+        <p><span>发布时间:</span>2016-10-27, 23:01:15</p>
+        <p><span>最后更新:</span>2018-10-22, 14:34:56</p>
+        <p>
+            <span>原始链接:</span><a class="post-url" href="/2016/10/27/distributed-tx-evolution/" title="分布式事务">http://kxh.ink/2016/10/27/distributed-tx-evolution/</a>
+            <span class="copy-path" data-clipboard-text="原文: http://kxh.ink/2016/10/27/distributed-tx-evolution/　　作者: 康兴华" title="点击复制文章链接"><i class="fa fa-clipboard"></i></span>
+            <script> var clipboard = new Clipboard('.copy-path'); </script>
+        </p>
+        <p>
+            <span>许可协议:</span><i class="fa fa-creative-commons"></i> <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/4.0/" title="CC BY-NC-SA 4.0 International" target="_blank">"署名-非商用-相同方式共享 4.0"</a> 转载请保留原文链接及作者。
+        </p>
+    </div>
+
+
+
+    <nav id="article-nav">
+        
+            <div id="article-nav-newer" class="article-nav-title">
+                <a href="/2016/10/27/ACID-CAP-BASE/">
+                    从ACID到CAP到BASE
+                </a>
+            </div>
+        
+        
+            <div id="article-nav-older" class="article-nav-title">
+                <a href="/2016/10/27/Idempotent/">
+                    幂等性
+                </a>
+            </div>
+        
+    </nav>
+
+  
+</article>
+
+    <div id="toc" class="toc-article">
+        <strong class="toc-title">文章目录</strong>
+        
+            <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#分布式事务背景"><span class="toc-number">1.</span> <span class="toc-text">分布式事务背景</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#分布式事务实现方式"><span class="toc-number">2.</span> <span class="toc-text">分布式事务实现方式</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#分布式事务的弊端"><span class="toc-number">3.</span> <span class="toc-text">分布式事务的弊端</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#强一致性模型的必要性"><span class="toc-number">4.</span> <span class="toc-text">强一致性模型的必要性</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#单机事务-异步复制"><span class="toc-number">5.</span> <span class="toc-text">单机事务+异步复制</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#带有事务功能的MQ做中间人角色"><span class="toc-number">6.</span> <span class="toc-text">带有事务功能的MQ做中间人角色</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#总结"><span class="toc-number">7.</span> <span class="toc-text">总结</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2016-10-21-23-07-38-康兴华"><span class="toc-number">8.</span> <span class="toc-text">2016-10-21 23:07:38 康兴华</span></a></li></ol>
+        
+    </div>
+    <style>
+        .left-col .switch-btn,
+        .left-col .switch-area {
+            display: none;
+        }
+        .toc-level-3 i,
+        .toc-level-3 ol {
+            display: none !important;
+        }
+    </style>
+
+    <input type="button" id="tocButton" value="隐藏目录" title="点击按钮隐藏或者显示文章目录">
+
+    <script>
+        yiliaConfig.toc = ["隐藏目录", "显示目录", !!"false"];
+    </script>
+
+
+
+    
+<div class="share">
+    
+        <div class="bdsharebuttonbox">
+            <a href="#" class="fa fa-twitter bds_twi" data-cmd="twi" title="分享到推特"></a>
+            <a href="#" class="fa fa-weibo bds_tsina" data-cmd="tsina" title="分享到新浪微博"></a>
+            <a href="#" class="fa fa-qq bds_sqq" data-cmd="sqq" title="分享给 QQ 好友"></a>
+            <a href="#" class="fa fa-files-o bds_copy" data-cmd="copy" title="复制网址"></a>
+            <a href="#" class="fa fa fa-envelope-o bds_mail" data-cmd="mail" title="通过邮件分享"></a>
+            <a href="#" class="fa fa-weixin bds_weixin" data-cmd="weixin" title="生成文章二维码"></a>
+            <a href="#" class="fa fa-share-alt bds_more" data-cmd="more"></a>
+        </div>
+        <script>
+            window._bd_share_config={
+                "common":{"bdSnsKey":{},"bdText":"分布式事务　| 康兴华　","bdMini":"2","bdMiniList":false,"bdPic":"","bdStyle":"0","bdSize":"24"},"share":{}};with(document)0[(getElementsByTagName('head')[0]||body).appendChild(createElement('script')).src='http://bdimg.share.baidu.com/static/api/js/share.js?v=89860593.js?cdnversion='+~(-new Date()/36e5)];
+        </script>
+    
+
+    
+</div>
+
+
+
+
+
+
+
+    
+
+
+
+
+    <div class="scroll" id="post-nav-button">
+        
+            <a href="/2016/10/27/ACID-CAP-BASE/" title="上一篇: 从ACID到CAP到BASE">
+                <i class="fa fa-angle-left"></i>
+            </a>
+        
+
+        <a title="文章列表"><i class="fa fa-bars"></i><i class="fa fa-times"></i></a>
+
+        
+            <a href="/2016/10/27/Idempotent/" title="下一篇: 幂等性">
+                <i class="fa fa-angle-right"></i>
+            </a>
+        
+    </div>
+
+    <ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2018/11/01/how-to-calculate-threadpool-size/README/">how-to-calculate-threadpool-size/README</a></li><li class="post-list-item"><a class="post-list-link" href="/2018/10/31/how-to-calculate-threadpool-size/">如何合理地估算线程池大小？</a></li><li class="post-list-item"><a class="post-list-link" href="/2018/09/19/HashMap-System-Learning/">深入理解HashMap</a></li><li class="post-list-item"><a class="post-list-link" href="/2018/06/24/Lock-Condition/">显示锁（Lock）及Condition的学习与使用</a></li><li class="post-list-item"><a class="post-list-link" href="/2018/06/21/Callable-Future-FutureTask/">Callable和Future、FutureTask的使用</a></li><li class="post-list-item"><a class="post-list-link" href="/2018/05/04/ThreadPoolPrinciple/">从使用到原理学习Java线程池</a></li><li class="post-list-item"><a class="post-list-link" href="/2017/02/16/Daemon-Thread/">守护线程</a></li><li class="post-list-item"><a class="post-list-link" href="/2017/02/15/Pass-By-Value/">Java中的参数传递——值传递、引用传递</a></li><li class="post-list-item"><a class="post-list-link" href="/2017/01/13/happen-before/">Java 内存模型</a></li><li class="post-list-item"><a class="post-list-link" href="/2017/01/06/summary-one/">第一部分总结</a></li><li class="post-list-item"><a class="post-list-link" href="/2017/01/05/synchronization-tool-class/">同步工具类</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/12/22/DuiXiangGongXiang/">对象的共享</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/12/06/BingFaJianShi/">并发简史</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/11/15/syn-jmm-visibility/">同步和Java内存模型 (三)可见性</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/11/15/syn-jmm-atomicity/">同步和Java内存模型 (二)原子性</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/11/15/syn-jmm-pre/">同步与Java内存模型(一)序言</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/11/02/Git-CentOS-Install/">Git CentOS 源码安装</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/10/27/ACID-CAP-BASE/">从ACID到CAP到BASE</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/10/27/distributed-tx-evolution/">分布式事务</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/10/27/Idempotent/">幂等性</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/10/26/Consistent-Hashing/">一致性哈希算法的理解与实践(Java)</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/10/01/YanYiMam-XinYiShan/">言宜慢 心宜善</a></li></ul>
+
+
+
+
+    <script>
+        
+    </script>
+</div>
+      <footer id="footer">
+    <div class="outer">
+        <div id="footer-info">
+            <div class="footer-left">
+                <i class="fa fa-copyright"></i> 
+                2016-2018 康兴华
+            </div>
+            <div class="footer-right">
+                <a href="http://hexo.io/" target="_blank" title="快速、简洁且高效的博客框架">Hexo</a>  Theme <a href="https://github.com/MOxFIVE/hexo-theme-yelee" target="_blank" title="简而不减 Hexo 双栏博客主题  v3.5">Yelee</a> by MOxFIVE <i class="fa fa-heart animated infinite pulse"></i>
+            </div>
+        </div>
+        
+            <div class="visit">
+                
+                    <span id="busuanzi_container_site_pv" style="display:none">
+                        <span id="site-visit" title="本站到访数"><i class="fa fa-user" aria-hidden="true"></i><span id="busuanzi_value_site_uv"></span>
+                        </span>
+                    </span>
+                
+                
+                    <span>| </span>
+                
+                
+                    <span id="busuanzi_container_page_pv" style="display:none">
+                        <span id="page-visit" title="本页阅读量"><i class="fa fa-eye animated infinite pulse" aria-hidden="true"></i><span id="busuanzi_value_page_pv"></span>
+                        </span>
+                    </span>
+                
+            </div>
+        
+    </div>
+</footer>
+    </div>
+    
+<script data-main="/js/main.js" src="//cdn.bootcss.com/require.js/2.2.0/require.min.js"></script>
+
+    <script>
+        $(document).ready(function() {
+            var iPad = window.navigator.userAgent.indexOf('iPad');
+            if (iPad > -1 || $(".left-col").css("display") === "none") {
+                var bgColorList = ["#9db3f4", "#414141", "#e5a859", "#f5dfc6", "#c084a0", "#847e72", "#cd8390", "#996731"];
+                var bgColor = Math.ceil(Math.random() * (bgColorList.length - 1));
+                $("body").css({"background-color": bgColorList[bgColor], "background-size": "cover"});
+            }
+            else {
+                var backgroundnum = 5;
+                var backgroundimg = "url(/background/bg-x.jpg)".replace(/x/gi, Math.ceil(Math.random() * backgroundnum));
+                $("body").css({"background": backgroundimg, "background-attachment": "fixed", "background-size": "cover"});
+            }
+        })
+    </script>
+
+
+
+
+
+<div class="scroll" id="scroll">
+    <a href="#" title="返回顶部"><i class="fa fa-arrow-up"></i></a>
+    <a href="#comments" onclick="load$hide();" title="查看评论"><i class="fa fa-comments-o"></i></a>
+    <a href="#footer" title="转到底部"><i class="fa fa-arrow-down"></i></a>
+</div>
+<script>
+    // Open in New Window
+    
+        var oOpenInNew = {
+            
+            
+            
+            
+            
+            
+             archives: ".archive-article-title", 
+             miniArchives: "a.post-list-link", 
+            
+             friends: "#js-friends a", 
+             socail: ".social a" 
+        }
+        for (var x in oOpenInNew) {
+            $(oOpenInNew[x]).attr("target", "_blank");
+        }
+    
+</script>
+
+<script async src="https://dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js">
+</script>
+  </div>
+</body>
+</html>
