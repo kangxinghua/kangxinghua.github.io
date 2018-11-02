@@ -267,6 +267,70 @@
 </nav>
       <div class="body-wrap">
   
+    <article id="post-mysql-transaction" class="article article-type-post" itemscope="" itemprop="blogPost">
+  
+    <div class="article-meta">
+      <a href="/2018/11/02/mysql-transaction/" class="article-date">
+      <time datetime="2018-11-02T06:24:40.000Z" itemprop="datePublished">2018-11-02</time>
+</a>
+
+
+    </div>
+  
+  <div class="article-inner">
+    
+      <input type="hidden" class="isFancy">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2018/11/02/mysql-transaction/">MySQL 四种事务隔离级的说明</a>
+    </h1>
+  
+
+      </header>
+      
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+          
+              <p>按照SQL:1992 事务隔离级别，InnoDB默认是可重复读的（REPEATABLE READ）。MySQL/InnoDB 提供SQL标准所描述的所有四个事务隔离级别。你可以在命令行用–transaction-isolation选项，或在选项文件里，为所有连接设置默认隔离级别。<br>例如，你可以在my.inf文件的[mysqld]节里类似如下设置该选项：</p>
+          
+      
+    </div>
+    
+    <div class="article-info article-info-index">
+      
+      
+
+      
+    <div class="article-tag tagcloud">
+        <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/笔记/">笔记</a></li></ul>
+    </div>
+
+      
+        <p class="article-more-link">
+          <a href="/2018/11/02/mysql-transaction/#more">more >></a>
+        </p>
+      
+      <div class="clearfix"></div>
+    </div>
+    
+  </div>
+  
+</article>
+
+
+
+
+
+
+
+
+
+  
     <article id="post-how-to-calculate-threadpool-size/README" class="article article-type-post" itemscope="" itemprop="blogPost">
   
     <div class="article-meta">
@@ -814,73 +878,6 @@
       
         <p class="article-more-link">
           <a href="/2017/01/13/happen-before/#more">more >></a>
-        </p>
-      
-      <div class="clearfix"></div>
-    </div>
-    
-  </div>
-  
-</article>
-
-
-
-
-
-
-
-
-
-  
-    <article id="post-summary-one" class="article article-type-post" itemscope="" itemprop="blogPost">
-  
-    <div class="article-meta">
-      <a href="/2017/01/06/summary-one/" class="article-date">
-      <time datetime="2017-01-06T06:40:08.000Z" itemprop="datePublished">2017-01-06</time>
-</a>
-
-
-    </div>
-  
-  <div class="article-inner">
-    
-      <input type="hidden" class="isFancy">
-    
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2017/01/06/summary-one/">第一部分总结</a>
-    </h1>
-  
-
-      </header>
-      
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-          
-              <h2 id="并发主要概念和规则"><a href="#并发主要概念和规则" class="headerlink" title="并发主要概念和规则"></a>并发主要概念和规则</h2><ul>
-<li>可变状态至关重要的<br>&emsp;&emsp;所有的并发问题都可以归结为如何协调对并发状态的访问。可变状态越少，就越容易确保线程安全性。</li>
-<li>尽量将域声明为final类型，除非需要它们是可变的。</li>
-<li>不可变对象一定是线程安全的。<br>&emsp;&emsp;不可变对象能极大的降低并发编程的复杂性。它们更为简单且安全，可以任意共享而无须使用加锁或者保护复制等机制。
-          
-      
-    </li></ul></div>
-    
-    <div class="article-info article-info-index">
-      
-      
-
-      
-    <div class="article-tag tagcloud">
-        <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Java-并发编程实战/">Java 并发编程实战</a></li></ul>
-    </div>
-
-      
-        <p class="article-more-link">
-          <a href="/2017/01/06/summary-one/#more">more >></a>
         </p>
       
       <div class="clearfix"></div>
