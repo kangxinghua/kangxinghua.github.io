@@ -267,6 +267,134 @@
 </nav>
       <div class="body-wrap">
   
+    <article id="post-Pass-By-Value" class="article article-type-post" itemscope="" itemprop="blogPost">
+  
+    <div class="article-meta">
+      <a href="/2017/02/15/Pass-By-Value/" class="article-date">
+      <time datetime="2017-02-15T01:59:42.000Z" itemprop="datePublished">2017-02-15</time>
+</a>
+
+
+    </div>
+  
+  <div class="article-inner">
+    
+      <input type="hidden" class="isFancy">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2017/02/15/Pass-By-Value/">Java中的参数传递——值传递、引用传递</a>
+    </h1>
+  
+
+      </header>
+      
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+          
+              <p>首先，不要纠结于Pass By Value 和 Pass By Reference 的字面上的意义，否则很容易陷入所谓的“一切传引用其本质上是传值”这种并不能解决问题毫无意义论战中。更何况，要想知道Java到底是传值还是传引用，起码你要先知道传值和传引用的准确含义吧？可是如果你已经知道了这两个名字的准确含义，那么你自己就能判断Java到底是传值还传引用。这个好像用大学的名词来解释高中的题目，对于初学者根本没有任何意义。<br>
+          
+      
+    </p></div>
+    
+    <div class="article-info article-info-index">
+      
+      
+
+      
+    <div class="article-tag tagcloud">
+        <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/笔记/">笔记</a></li></ul>
+    </div>
+
+      
+        <p class="article-more-link">
+          <a href="/2017/02/15/Pass-By-Value/#more">more >></a>
+        </p>
+      
+      <div class="clearfix"></div>
+    </div>
+    
+  </div>
+  
+</article>
+
+
+
+
+
+
+
+
+
+  
+    <article id="post-happen-before" class="article article-type-post" itemscope="" itemprop="blogPost">
+  
+    <div class="article-meta">
+      <a href="/2017/01/13/happen-before/" class="article-date">
+      <time datetime="2017-01-13T05:21:49.000Z" itemprop="datePublished">2017-01-13</time>
+</a>
+
+
+    </div>
+  
+  <div class="article-inner">
+    
+      <input type="hidden" class="isFancy">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2017/01/13/happen-before/">Java 内存模型</a>
+    </h1>
+  
+
+      </header>
+      
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+          
+              <h2 id="happen-before-规则介绍"><a href="#happen-before-规则介绍" class="headerlink" title="happen-before 规则介绍"></a>happen-before 规则介绍</h2><p>Java 语言中有一个“先行发生”（happen-before）的规则，它是Java内存模型中定义的两项操作之间的关系，如果操作A先行发生于B，其意思就是说，在发生操作B之前，操作A产生的影响都能被操作B观察到，“影响”包括修改了内存中的共享变量的值、发送了消息、调用了方法等，它与时间的先后发生基本没有太大关系。z合格原则特别重要，它是判断数据是否存在竞争、线程是否安全的重要以及。<br>
+          
+      
+    </p></div>
+    
+    <div class="article-info article-info-index">
+      
+      
+
+      
+    <div class="article-tag tagcloud">
+        <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Java-并发编程实战/">Java 并发编程实战</a></li></ul>
+    </div>
+
+      
+        <p class="article-more-link">
+          <a href="/2017/01/13/happen-before/#more">more >></a>
+        </p>
+      
+      <div class="clearfix"></div>
+    </div>
+    
+  </div>
+  
+</article>
+
+
+
+
+
+
+
+
+
+  
     <article id="post-summary-one" class="article article-type-post" itemscope="" itemprop="blogPost">
   
     <div class="article-meta">
@@ -774,138 +902,6 @@
       
         <p class="article-more-link">
           <a href="/2016/11/02/Git-CentOS-Install/#more">more >></a>
-        </p>
-      
-      <div class="clearfix"></div>
-    </div>
-    
-  </div>
-  
-</article>
-
-
-
-
-
-
-
-
-
-  
-    <article id="post-ACID-CAP-BASE" class="article article-type-post" itemscope="" itemprop="blogPost">
-  
-    <div class="article-meta">
-      <a href="/2016/10/27/ACID-CAP-BASE/" class="article-date">
-      <time datetime="2016-10-27T15:05:35.000Z" itemprop="datePublished">2016-10-27</time>
-</a>
-
-
-    </div>
-  
-  <div class="article-inner">
-    
-      <input type="hidden" class="isFancy">
-    
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2016/10/27/ACID-CAP-BASE/">从ACID到CAP到BASE</a>
-    </h1>
-  
-
-      </header>
-      
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-          
-              <h1 id="序"><a href="#序" class="headerlink" title="序"></a>序</h1><p>本文主要讲述分布式系统开发的一些相关理论基础。</p>
-<h1 id="ACID"><a href="#ACID" class="headerlink" title="ACID"></a>ACID</h1><p>事务的四个特征：</p>
-<h2 id="Atomic-原子性-A"><a href="#Atomic-原子性-A" class="headerlink" title="Atomic 原子性(A)"></a>Atomic 原子性(A)</h2><p>事务必须是一个原子的操作序列单元，事务中包含的各项操作在一次执行过程中，要么全部成功，要么全部不执行，任何一项失败，整个事务回滚，只有全部执行成功，整个事务才算成功。</p>
-<h2 id="Consistency-一致性-C"><a href="#Consistency-一致性-C" class="headerlink" title="Consistency 一致性(C)"></a>Consistency 一致性(C)</h2><p>事务的执行不能破坏数据库数据的完整性和一致性，事务在执行之前和之后数据库都必须处于一致性状态。</p>
-<h2 id="Isolation-隔离性-I"><a href="#Isolation-隔离性-I" class="headerlink" title="Isolation 隔离性(I)"></a>Isolation 隔离性(I)</h2><p>在并发环境中，并发的事务是相互隔离的，一个事务的执行不能被其他事务干扰，即不同的事务并发操纵相同的数据时，每个事务都有各自完整的数据空间，即以个事务内部的操作及使用数据对其他并发事务是隔离的，并发执行的各个事务之间不能相互干扰。  </p>
-          
-      
-    </div>
-    
-    <div class="article-info article-info-index">
-      
-      
-
-      
-    <div class="article-tag tagcloud">
-        <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/笔记/">笔记</a></li></ul>
-    </div>
-
-      
-        <p class="article-more-link">
-          <a href="/2016/10/27/ACID-CAP-BASE/#more">more >></a>
-        </p>
-      
-      <div class="clearfix"></div>
-    </div>
-    
-  </div>
-  
-</article>
-
-
-
-
-
-
-
-
-
-  
-    <article id="post-distributed-tx-evolution" class="article article-type-post" itemscope="" itemprop="blogPost">
-  
-    <div class="article-meta">
-      <a href="/2016/10/27/distributed-tx-evolution/" class="article-date">
-      <time datetime="2016-10-27T15:01:15.000Z" itemprop="datePublished">2016-10-27</time>
-</a>
-
-
-    </div>
-  
-  <div class="article-inner">
-    
-      <input type="hidden" class="isFancy">
-    
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2016/10/27/distributed-tx-evolution/">分布式事务</a>
-    </h1>
-  
-
-      </header>
-      
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-          
-              <h1 id="分布式事务背景"><a href="#分布式事务背景" class="headerlink" title="分布式事务背景"></a>分布式事务背景</h1><p>现在分布式系统一般由多个独立的子系统组成，多个子系统通过进程间通信（<a href="http://en.wikipedia.org/wiki/Remote_procedure_call" target="_blank" rel="noopener">RPC</a>）互相协作配合完成各个功能。有很多用例会跨多个子系统才能完成，比较典型的是电子商务网站的下单支付流程，至少会涉及交易系统和支付系统，而且这个过程中会涉及到事务的概念，即保证交易系统和支付系统的数据一致性。通常我们谈及的事务是指单机资源的<a href="http://baike.baidu.com/subview/600227/5926023.htm" target="_blank" rel="noopener">ACID</a>属性，所以此处我们称这种跨系统的事务为分布式事务。<br>
-          
-      
-    </p></div>
-    
-    <div class="article-info article-info-index">
-      
-      
-
-      
-    <div class="article-tag tagcloud">
-        <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/笔记/">笔记</a></li></ul>
-    </div>
-
-      
-        <p class="article-more-link">
-          <a href="/2016/10/27/distributed-tx-evolution/#more">more >></a>
         </p>
       
       <div class="clearfix"></div>

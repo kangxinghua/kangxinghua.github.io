@@ -15,18 +15,14 @@
 
 
 
-<meta name="description" content="并发主要概念和规则 可变状态至关重要的&amp;emsp;&amp;emsp;所有的并发问题都可以归结为如何协调对并发状态的访问。可变状态越少，就越容易确保线程安全性。 尽量将域声明为final类型，除非需要它们是可变的。 不可变对象一定是线程安全的。&amp;emsp;&amp;emsp;不可变对象能极大的降低并发编程的复杂性。它们更为简单且安全，可以任意共享而无须使用加锁或者保护复制等机制。">
-<meta name="keywords" content="Java 并发编程实战">
 <meta property="og:type" content="article">
-<meta property="og:title" content="第一部分总结">
-<meta property="og:url" content="http://kxh.ink/2017/01/06/summary-one/index.html">
+<meta property="og:title" content="康兴华">
+<meta property="og:url" content="http://kxh.ink/2018/11/02/mysql-transaction/README/index.html">
 <meta property="og:site_name" content="康兴华">
-<meta property="og:description" content="并发主要概念和规则 可变状态至关重要的&amp;emsp;&amp;emsp;所有的并发问题都可以归结为如何协调对并发状态的访问。可变状态越少，就越容易确保线程安全性。 尽量将域声明为final类型，除非需要它们是可变的。 不可变对象一定是线程安全的。&amp;emsp;&amp;emsp;不可变对象能极大的降低并发编程的复杂性。它们更为简单且安全，可以任意共享而无须使用加锁或者保护复制等机制。">
 <meta property="og:locale" content="zh-CN">
-<meta property="og:updated_time" content="2018-10-22T06:34:56.130Z">
+<meta property="og:updated_time" content="2018-11-01T02:54:19.463Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="第一部分总结">
-<meta name="twitter:description" content="并发主要概念和规则 可变状态至关重要的&amp;emsp;&amp;emsp;所有的并发问题都可以归结为如何协调对并发状态的访问。可变状态越少，就越容易确保线程安全性。 尽量将域声明为final类型，除非需要它们是可变的。 不可变对象一定是线程安全的。&amp;emsp;&amp;emsp;不可变对象能极大的降低并发编程的复杂性。它们更为简单且安全，可以任意共享而无须使用加锁或者保护复制等机制。">
+<meta name="twitter:title" content="康兴华">
 
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 
@@ -58,7 +54,7 @@
 <link href="//cdn.bootcss.com/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet">
 
 
-<title>第一部分总结 | 康兴华</title>
+<title>康兴华</title>
 
 <script src="//cdn.bootcss.com/jquery/2.2.4/jquery.min.js"></script>
 <script src="//cdn.bootcss.com/clipboard.js/1.5.10/clipboard.min.js"></script>
@@ -265,11 +261,11 @@
     </div>
     <link class="menu-list" tags="标签" friends="友情链接" about="关于我">
 </nav>
-      <div class="body-wrap"><article id="post-summary-one" class="article article-type-post" itemscope="" itemprop="blogPost">
+      <div class="body-wrap"><article id="post-mysql-transaction/README" class="article article-type-post" itemscope="" itemprop="blogPost">
   
     <div class="article-meta">
-      <a href="/2017/01/06/summary-one/" class="article-date">
-      <time datetime="2017-01-06T06:40:08.000Z" itemprop="datePublished">2017-01-06</time>
+      <a href="/2018/11/02/mysql-transaction/README/" class="article-date">
+      <time datetime="2018-11-02T08:12:24.095Z" itemprop="datePublished">2018-11-02</time>
 </a>
 
 
@@ -280,45 +276,10 @@
       <input type="hidden" class="isFancy">
     
     
-      <header class="article-header">
-        
-  
-    <h1 class="article-title" itemprop="name">
-      第一部分总结
-    </h1>
-  
-
-      </header>
-      
-      <div class="article-info article-info-post">
-        
-
-        
-    <div class="article-tag tagcloud">
-        <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Java-并发编程实战/">Java 并发编程实战</a></li></ul>
-    </div>
-
-        <div class="clearfix"></div>
-      </div>
-      
-    
     <div class="article-entry" itemprop="articleBody">
       
           
-        <h2 id="并发主要概念和规则"><a href="#并发主要概念和规则" class="headerlink" title="并发主要概念和规则"></a>并发主要概念和规则</h2><ul>
-<li>可变状态至关重要的<br>&emsp;&emsp;所有的并发问题都可以归结为如何协调对并发状态的访问。可变状态越少，就越容易确保线程安全性。</li>
-<li>尽量将域声明为final类型，除非需要它们是可变的。</li>
-<li>不可变对象一定是线程安全的。<br>&emsp;&emsp;不可变对象能极大的降低并发编程的复杂性。它们更为简单且安全，可以任意共享而无须使用加锁或者保护复制等机制。<a id="more"></a></li>
-<li>封装有助于管理复杂性。<br>&emsp;&emsp;在编写线程安全的程序时，虽然可以将所有数据都保存在全局变量中，但为什么要这样做？将数据封装在对象中，更易于维护不变性条件：将同步机制封装在对象中，更易于遵循同步策略。</li>
-<li>用锁来保护每个可变变量。</li>
-<li>当保护同一个不变性条件中的所有变量时，要使用同一个锁。</li>
-<li>在执行复合操作期间，要持有锁。</li>
-<li>如果从多线程中访问同一个可变变量时没有同步机制，那么程序会出现问题。</li>
-<li>不要故作聪明地推断出不需要使用同步。</li>
-<li>在设计过程中考虑线程安全，或者在文档中明确的指出它不是线程安全的。  </li>
-<li>将同步策略文档化。</li>
-</ul>
-
+        
       
     </div>
     
@@ -326,13 +287,13 @@
   
     
     <div class="copyright">
-        <p><span>本文标题:</span><a href="/2017/01/06/summary-one/">第一部分总结</a></p>
+        <p><span>本文标题:</span><a href="/2018/11/02/mysql-transaction/README/"></a></p>
         <p><span>文章作者:</span><a href="/" title="回到主页">康兴华</a></p>
-        <p><span>发布时间:</span>2017-01-06, 14:40:08</p>
-        <p><span>最后更新:</span>2018-10-22, 14:34:56</p>
+        <p><span>发布时间:</span>2018-11-02, 16:12:24</p>
+        <p><span>最后更新:</span>2018-11-01, 10:54:19</p>
         <p>
-            <span>原始链接:</span><a class="post-url" href="/2017/01/06/summary-one/" title="第一部分总结">http://kxh.ink/2017/01/06/summary-one/</a>
-            <span class="copy-path" data-clipboard-text="原文: http://kxh.ink/2017/01/06/summary-one/　　作者: 康兴华" title="点击复制文章链接"><i class="fa fa-clipboard"></i></span>
+            <span>原始链接:</span><a class="post-url" href="/2018/11/02/mysql-transaction/README/" title="">http://kxh.ink/2018/11/02/mysql-transaction/README/</a>
+            <span class="copy-path" data-clipboard-text="原文: http://kxh.ink/2018/11/02/mysql-transaction/README/　　作者: 康兴华" title="点击复制文章链接"><i class="fa fa-clipboard"></i></span>
             <script> var clipboard = new Clipboard('.copy-path'); </script>
         </p>
         <p>
@@ -345,15 +306,15 @@
     <nav id="article-nav">
         
             <div id="article-nav-newer" class="article-nav-title">
-                <a href="/2017/01/13/happen-before/">
-                    Java 内存模型
+                <a href="/2018/11/08/why-is-redis/">
+                    为什么分布式一定要有redis?
                 </a>
             </div>
         
         
             <div id="article-nav-older" class="article-nav-title">
-                <a href="/2017/01/05/synchronization-tool-class/">
-                    同步工具类
+                <a href="/2018/11/02/mysql-transaction/">
+                    MySQL 四种事务隔离级的说明
                 </a>
             </div>
         
@@ -365,7 +326,7 @@
     <div id="toc" class="toc-article">
         <strong class="toc-title">文章目录</strong>
         
-            <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#并发主要概念和规则"><span class="toc-number">1.</span> <span class="toc-text">并发主要概念和规则</span></a></li></ol>
+            
         
     </div>
     <style>
@@ -401,7 +362,7 @@
         </div>
         <script>
             window._bd_share_config={
-                "common":{"bdSnsKey":{},"bdText":"第一部分总结　| 康兴华　","bdMini":"2","bdMiniList":false,"bdPic":"","bdStyle":"0","bdSize":"24"},"share":{}};with(document)0[(getElementsByTagName('head')[0]||body).appendChild(createElement('script')).src='http://bdimg.share.baidu.com/static/api/js/share.js?v=89860593.js?cdnversion='+~(-new Date()/36e5)];
+                "common":{"bdSnsKey":{},"bdText":"　| 康兴华　","bdMini":"2","bdMiniList":false,"bdPic":"","bdStyle":"0","bdSize":"24"},"share":{}};with(document)0[(getElementsByTagName('head')[0]||body).appendChild(createElement('script')).src='http://bdimg.share.baidu.com/static/api/js/share.js?v=89860593.js?cdnversion='+~(-new Date()/36e5)];
         </script>
     
 
@@ -421,7 +382,7 @@
 
     <div class="scroll" id="post-nav-button">
         
-            <a href="/2017/01/13/happen-before/" title="上一篇: Java 内存模型">
+            <a href="/2018/11/08/why-is-redis/" title="上一篇: 为什么分布式一定要有redis?">
                 <i class="fa fa-angle-left"></i>
             </a>
         
@@ -429,7 +390,7 @@
         <a title="文章列表"><i class="fa fa-bars"></i><i class="fa fa-times"></i></a>
 
         
-            <a href="/2017/01/05/synchronization-tool-class/" title="下一篇: 同步工具类">
+            <a href="/2018/11/02/mysql-transaction/" title="下一篇: MySQL 四种事务隔离级的说明">
                 <i class="fa fa-angle-right"></i>
             </a>
         
