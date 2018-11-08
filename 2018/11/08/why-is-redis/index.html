@@ -15,21 +15,21 @@
 
 
 
-<meta name="description" content="为什么使用redis分析:博主觉得在项目中使用redis，主要是从两个角度去考虑:性能和并发。当然，redis还具备可以做分布式锁等其他功能，但是如果只是为了分布式锁这些其他功能，完全还有其他中间件(如zookpeer等)代替，并不是非要使用redis。因此，这个问题主要从性能和并发两个角度去答。 回答:如下所示，分为两点 性能如下图所示，我们在碰到需要执行耗时特别久，且结果不频繁变动的SQL，就">
+<meta name="description" content="为什么使用redis分析:博主觉得在项目中使用redis，主要是从两个角度去考虑:性能和并发。当然，redis还具备可以做分布式锁等其他功能，但是如果只是为了分布式锁这些其他功能，完全还有其他中间件(如zookpeer等)代替，并不是非要使用redis。因此，这个问题主要从性能和并发两个角度去答。">
 <meta name="keywords" content="笔记">
 <meta property="og:type" content="article">
 <meta property="og:title" content="为什么分布式一定要有redis?">
 <meta property="og:url" content="http://kxh.ink/2018/11/08/why-is-redis/index.html">
 <meta property="og:site_name" content="康兴华">
-<meta property="og:description" content="为什么使用redis分析:博主觉得在项目中使用redis，主要是从两个角度去考虑:性能和并发。当然，redis还具备可以做分布式锁等其他功能，但是如果只是为了分布式锁这些其他功能，完全还有其他中间件(如zookpeer等)代替，并不是非要使用redis。因此，这个问题主要从性能和并发两个角度去答。 回答:如下所示，分为两点 性能如下图所示，我们在碰到需要执行耗时特别久，且结果不频繁变动的SQL，就">
+<meta property="og:description" content="为什么使用redis分析:博主觉得在项目中使用redis，主要是从两个角度去考虑:性能和并发。当然，redis还具备可以做分布式锁等其他功能，但是如果只是为了分布式锁这些其他功能，完全还有其他中间件(如zookpeer等)代替，并不是非要使用redis。因此，这个问题主要从性能和并发两个角度去答。">
 <meta property="og:locale" content="zh-CN">
 <meta property="og:image" content="http://kxh.ink/2018/11/08/why-is-redis/19c2ad17bb3685a1316adbae40504edf.jpg">
 <meta property="og:image" content="http://kxh.ink/2018/11/08/why-is-redis/a6670ab7b9d361ee8a05279ded8466f2.jpg">
 <meta property="og:image" content="http://kxh.ink/2018/11/08/why-is-redis/2a42d47ab2597eca67444004727de6ee.jpg">
-<meta property="og:updated_time" content="2018-11-08T06:15:50.340Z">
+<meta property="og:updated_time" content="2018-11-08T11:06:08.358Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="为什么分布式一定要有redis?">
-<meta name="twitter:description" content="为什么使用redis分析:博主觉得在项目中使用redis，主要是从两个角度去考虑:性能和并发。当然，redis还具备可以做分布式锁等其他功能，但是如果只是为了分布式锁这些其他功能，完全还有其他中间件(如zookpeer等)代替，并不是非要使用redis。因此，这个问题主要从性能和并发两个角度去答。 回答:如下所示，分为两点 性能如下图所示，我们在碰到需要执行耗时特别久，且结果不频繁变动的SQL，就">
+<meta name="twitter:description" content="为什么使用redis分析:博主觉得在项目中使用redis，主要是从两个角度去考虑:性能和并发。当然，redis还具备可以做分布式锁等其他功能，但是如果只是为了分布式锁这些其他功能，完全还有其他中间件(如zookpeer等)代替，并不是非要使用redis。因此，这个问题主要从性能和并发两个角度去答。">
 <meta name="twitter:image" content="http://kxh.ink/2018/11/08/why-is-redis/19c2ad17bb3685a1316adbae40504edf.jpg">
 
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
@@ -310,6 +310,7 @@
       
           
         <h2 id="为什么使用redis"><a href="#为什么使用redis" class="headerlink" title="为什么使用redis"></a>为什么使用redis</h2><p><strong>分析</strong>:博主觉得在项目中使用redis，主要是从两个角度去考虑:性能和并发。当然，redis还具备可以做分布式锁等其他功能，但是如果只是为了分布式锁这些其他功能，完全还有其他中间件(如zookpeer等)代替，并不是非要使用redis。因此，这个问题主要从性能和并发两个角度去答。</p>
+<a id="more"></a>
 <p><strong>回答:如下所示，分为两点</strong></p>
 <h3 id="性能"><a href="#性能" class="headerlink" title="性能"></a>性能</h3><p>如下图所示，我们在碰到需要执行耗时特别久，且结果不频繁变动的SQL，就特别适合将运行结果放入缓存。这样，后面的请求就去缓存中读取，使得请求能够迅速响应。</p>
 <p><img src="19c2ad17bb3685a1316adbae40504edf.jpg" alt=""></p>
@@ -450,7 +451,7 @@
         <p><span>本文标题:</span><a href="/2018/11/08/why-is-redis/">为什么分布式一定要有redis?</a></p>
         <p><span>文章作者:</span><a href="/" title="回到主页">康兴华</a></p>
         <p><span>发布时间:</span>2018-11-08, 11:09:21</p>
-        <p><span>最后更新:</span>2018-11-08, 14:15:50</p>
+        <p><span>最后更新:</span>2018-11-08, 19:06:08</p>
         <p>
             <span>原始链接:</span><a class="post-url" href="/2018/11/08/why-is-redis/" title="为什么分布式一定要有redis?">http://kxh.ink/2018/11/08/why-is-redis/</a>
             <span class="copy-path" data-clipboard-text="原文: http://kxh.ink/2018/11/08/why-is-redis/　　作者: 康兴华" title="点击复制文章链接"><i class="fa fa-clipboard"></i></span>

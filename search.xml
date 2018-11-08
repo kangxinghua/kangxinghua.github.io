@@ -7,6 +7,7 @@
       <title><![CDATA[为什么分布式一定要有redis?]]></title>
       <url>http://kxh.ink/2018/11/08/why-is-redis/</url>
       <content type="html"><![CDATA[<h2 id="为什么使用redis"><a href="#为什么使用redis" class="headerlink" title="为什么使用redis"></a>为什么使用redis</h2><p><strong>分析</strong>:博主觉得在项目中使用redis，主要是从两个角度去考虑:性能和并发。当然，redis还具备可以做分布式锁等其他功能，但是如果只是为了分布式锁这些其他功能，完全还有其他中间件(如zookpeer等)代替，并不是非要使用redis。因此，这个问题主要从性能和并发两个角度去答。</p>
+<a id="more"></a>
 <p><strong>回答:如下所示，分为两点</strong></p>
 <h3 id="性能"><a href="#性能" class="headerlink" title="性能"></a>性能</h3><p>如下图所示，我们在碰到需要执行耗时特别久，且结果不频繁变动的SQL，就特别适合将运行结果放入缓存。这样，后面的请求就去缓存中读取，使得请求能够迅速响应。</p>
 <p><img src="19c2ad17bb3685a1316adbae40504edf.jpg" alt=""></p>
