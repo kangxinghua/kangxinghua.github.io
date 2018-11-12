@@ -267,6 +267,72 @@
 </nav>
       <div class="body-wrap">
   
+    <article id="post-Daemon-Thread" class="article article-type-post" itemscope="" itemprop="blogPost">
+  
+    <div class="article-meta">
+      <a href="/2017/02/16/Daemon-Thread/" class="article-date">
+      <time datetime="2017-02-16T07:56:43.000Z" itemprop="datePublished">2017-02-16</time>
+</a>
+
+
+    </div>
+  
+  <div class="article-inner">
+    
+      <input type="hidden" class="isFancy">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2017/02/16/Daemon-Thread/">守护线程</a>
+    </h1>
+  
+
+      </header>
+      
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+          
+              <p>有时候，你希望创建一个线程来执行一些辅助工作，但又不希望这个线程阻碍JVM的关闭。在这种情况下就需要使用守护线程（Daemon Thread）。<br>线程可分为两种：普通线程和守护线程。在JVM启动时创建的所有线程中，除了主线程以外，其他的线程都是守护线程（例如垃圾回收器以及其他执行辅助工作的线程）。当创建一个新线程时，新线程将继承创建它的线程的守护状态，因此在默认情况下，主线程创建的所有线程都是普通线程。<br>普通线程与守护线程之间的差异仅在于当线程退出时发生的操作。当一个线程退出时，JVM会检查其他正在运行的线程，如果这些线程都是守护线程，那么JVM会正常退出操作。当JVM停止时，所有仍然存在的守护线程都将抛弃–既不会执行finally代码块，也不会执行回卷栈，而JVM只是直接退出。<br>我们应尽可能少的使用守护线程–很少操作能在不进行清理的情况下被安全的抛弃。特别是，如果在守护线程中执行可能包含I/O操作的任务，那么将是一种危险的行为。守护线程最好用于执行“内部”任务，例如周期性地从内存缓存中移除逾期的数据。</p>
+<blockquote>
+<p><strong>此外，守护线程通常不能用来代替应用程序管理程序中各个服务的生命周期。</strong><br>
+          
+      
+    </p></blockquote></div>
+    
+    <div class="article-info article-info-index">
+      
+      
+
+      
+    <div class="article-tag tagcloud">
+        <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Java-并发编程实战/">Java 并发编程实战</a></li></ul>
+    </div>
+
+      
+        <p class="article-more-link">
+          <a href="/2017/02/16/Daemon-Thread/#more">more >></a>
+        </p>
+      
+      <div class="clearfix"></div>
+    </div>
+    
+  </div>
+  
+</article>
+
+
+
+
+
+
+
+
+
+  
     <article id="post-Pass-By-Value" class="article article-type-post" itemscope="" itemprop="blogPost">
   
     <div class="article-meta">
@@ -838,70 +904,6 @@
       
         <p class="article-more-link">
           <a href="/2016/11/15/syn-jmm-pre/#more">more >></a>
-        </p>
-      
-      <div class="clearfix"></div>
-    </div>
-    
-  </div>
-  
-</article>
-
-
-
-
-
-
-
-
-
-  
-    <article id="post-Git-CentOS-Install" class="article article-type-post" itemscope="" itemprop="blogPost">
-  
-    <div class="article-meta">
-      <a href="/2016/11/02/Git-CentOS-Install/" class="article-date">
-      <time datetime="2016-11-02T05:42:14.000Z" itemprop="datePublished">2016-11-02</time>
-</a>
-
-
-    </div>
-  
-  <div class="article-inner">
-    
-      <input type="hidden" class="isFancy">
-    
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2016/11/02/Git-CentOS-Install/">Git CentOS 源码安装</a>
-    </h1>
-  
-
-      </header>
-      
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-          
-              <h2 id="安装依赖包"><a href="#安装依赖包" class="headerlink" title="安装依赖包"></a>安装依赖包</h2><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">yum install gcc</span><br><span class="line">yum install curl</span><br><span class="line">yum install curl-devel</span><br><span class="line">yum install zlib-devel</span><br><span class="line">yum install openssl-devel</span><br><span class="line">yum install perl</span><br><span class="line">yum install cpio</span><br><span class="line">yum install expat-devel</span><br><span class="line">yum install gettext-devel</span><br><span class="line">yum install libcurl-devel</span><br><span class="line">yum install autoconf</span><br><span class="line">yum install perl-ExtUtils-Embed</span><br></pre></td></tr></table></figure>
-          
-      
-    </div>
-    
-    <div class="article-info article-info-index">
-      
-      
-
-      
-    <div class="article-tag tagcloud">
-        <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/笔记/">笔记</a></li></ul>
-    </div>
-
-      
-        <p class="article-more-link">
-          <a href="/2016/11/02/Git-CentOS-Install/#more">more >></a>
         </p>
       
       <div class="clearfix"></div>
